@@ -22,44 +22,80 @@ main =
   Browser.sandbox { init = init, update = update, view = view }
 
 -- MODEL
-type alias Model = Int
+type alias Model = {increment1: Int, increment2: Int}
 
 init : Model
-init =
-  0
+init = Model 0 0
 
 
 -- UPDATE
 
-type Msg = Increment | Decrement | Reset
+type IncrementType = One | Two
+type Msg = Increment IncrementType Int | Decrement IncrementType Int | Reset IncrementType
 
 update : Msg -> Model -> Model
 update msg model =
   case msg of
-    Increment ->
-      model + 1
+    Increment One steps ->
+      {model | increment1 = model.increment1 + steps}
 
-    Decrement ->
-      model - 1
+    Decrement One steps ->
+      {model | increment1 = model.increment1 - steps}
 
-    Reset ->
-         0
+    Reset One ->
+      {model | increment1 = 0}
+
+    Increment Two steps ->
+      {model | increment2 = model.increment2 + steps}
+
+    Decrement Two steps ->
+       {model | increment2 = model.increment2 - steps}
+
+    Reset Two ->
+       {model | increment2 = 0}
+
+
+chooseIncrement: IncrementType -> Model -> Int
+chooseIncrement incrementType model =
+    case incrementType of
+        One ->
+            model.increment1
+        Two ->
+            model.increment2
+
+
+
+
+
+incrementButton: IncrementType -> Int -> Model -> Html Msg
+incrementButton incrementType steps model =
+    div [style "margin" "10px", style "float" "left"]
+    [ div []
+                [ button [ onClick (Decrement incrementType steps) ] [ text "-" ]
+                , div [] [ text (String.fromInt (chooseIncrement incrementType model)) ]
+                , button [ onClick (Increment incrementType steps) ] [ text "+" ]
+                ]
+                ,
+                div []
+                [
+                  button [style "margin-top" "18px" , style "margin-left" "10px" , onClick (Reset incrementType) ] [ text "Reset Count!!" ]
+                ]
+               ]
 
 
 
 -- VIEW
-
 view : Model -> Html Msg
 view model =
+    let
+        incrementBy2 : Model -> Html Msg
+        incrementBy2 = incrementButton Two 2
+
+        incrementBy1 : Model -> Html Msg
+        incrementBy1 = incrementButton One 1
+    in
     div []
-    [      div [style "float" "left"]
-            [ button [ onClick Decrement ] [ text "-" ]
-            , div [] [ text (String.fromInt model) ]
-            , button [ onClick Increment ] [ text "+" ]
-            ]
-            ,
-            div []
-            [
-              button [style "margin-top" "18px" , style "margin-left" "10px" , onClick Reset ] [ text "Reset Count!!" ]
-            ]
+    [
+        incrementBy1 model
+        ,  incrementBy2 model
     ]
