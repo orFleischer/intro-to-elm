@@ -6,7 +6,7 @@ module Exercises.RandomDice exposing (..)
 
    Instead of showing a number, show the die face as an image.
    Instead of showing an image of a die face, use elm/svg to draw it yourself.
-   Create a weighted die with Random.weighted.
+   Create a weighted die with Random.weighted. (didn't do)
    Add a second die and have them both roll at the same time.
    Have the dice flip around randomly before they settle on a final value.
 
@@ -14,6 +14,7 @@ module Exercises.RandomDice exposing (..)
 
 import Browser
 import Html exposing (..)
+import Html.Attributes exposing (style)
 import Html.Events exposing (..)
 import Random
 import Svg exposing (Svg, circle, rect, svg)
@@ -46,13 +47,14 @@ diceColors =
 
 
 type alias Model =
-    { dieFace : Int
+    { dieFace1 : Int
+    , dieFace2 : Int
     }
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( Model 1
+    ( Model 1 1
     , Cmd.none
     )
 
@@ -63,19 +65,24 @@ init _ =
 
 type Msg
     = Roll
-    | NewFace Int
+    | NewFace Int Int
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
+    let
+        dices : Random.Generator Msg
+        dices =
+            Random.map2 (\dice1 dice2 -> NewFace dice1 dice2) (Random.int 1 6) (Random.int 1 6)
+    in
     case msg of
         Roll ->
             ( model
-            , Random.generate NewFace (Random.int 1 6)
+            , Random.generate identity dices
             )
 
-        NewFace newFace ->
-            ( Model newFace
+        NewFace newFace1 newFace2 ->
+            ( Model newFace1 newFace2
             , Cmd.none
             )
 
@@ -95,57 +102,93 @@ subscriptions model =
 
 view : Model -> Html Msg
 view model =
-    div []
-         [ h1 [] [ text (String.fromInt model.dieFace) ]
-         , svg [] (dice 10 10 50 model.dieFace)
-        , button [ onClick Roll ] [ text "Roll" ]
+    div [ style "float" "left" ]
+        [ div []
+            [ h1 [] [ text (String.fromInt model.dieFace1) ]
+            , svg [] (dice 10 10 50 model.dieFace1)
+            ]
+        , div []
+            [ h1 [] [ text (String.fromInt model.dieFace2) ]
+            , svg [] (dice 10 10 50 model.dieFace2)
+            ]
+         , button [ onClick Roll ] [ text "Roll" ]
         ]
 
-dice: Float -> Float -> Float -> Int -> List (Svg msg)
+
+dice : Float -> Float -> Float -> Int -> List (Svg msg)
 dice upperLeftX upperLeftY edgeLength diceFace =
     let
-        edgeLengthStr = String.fromFloat edgeLength
-        rectSvg = rect [ width edgeLengthStr
-                             , height edgeLengthStr
-                             , upperLeftX |> String.fromFloat |> x
-                             , upperLeftY |> String.fromFloat |> y
-                             , rx "2"
-                             , ry "2"
-                             , fill diceColors.red
-                             , stroke "black"
-                             , strokeWidth "2"][]
-     in
-        rectSvg :: (diceDots upperLeftX upperLeftY edgeLength diceFace)
+        edgeLengthStr =
+            String.fromFloat edgeLength
+
+        rectSvg =
+            rect
+                [ width edgeLengthStr
+                , height edgeLengthStr
+                , upperLeftX |> String.fromFloat |> x
+                , upperLeftY |> String.fromFloat |> y
+                , rx "2"
+                , ry "2"
+                , fill diceColors.red
+                , stroke "black"
+                , strokeWidth "2"
+                ]
+                []
+    in
+    rectSvg :: diceDots upperLeftX upperLeftY edgeLength diceFace
 
 
-diceDots: Float -> Float -> Float -> Int -> List (Svg msg)
+diceDots : Float -> Float -> Float -> Int -> List (Svg msg)
 diceDots x y edgeLength diceFace =
     case diceFace of
-        1 -> List.map (\f -> f x y edgeLength) [diceDotCenter]
-        2 -> List.map (\f -> f x y edgeLength) [diceDotLowerLeft, diceDotUpperRight]
-        3 -> List.map (\f -> f x y edgeLength) [diceDotLowerLeft, diceDotUpperRight, diceDotCenter]
-        4 -> List.map (\f -> f x y edgeLength) [diceDotLowerLeft, diceDotLowerRight, diceDotUpperLeft, diceDotUpperRight]
-        5 -> List.map (\f -> f x y edgeLength) [diceDotLowerLeft, diceDotLowerRight, diceDotUpperLeft, diceDotUpperRight, diceDotCenter]
-        6 -> List.map (\f -> f x y edgeLength) [diceDotLowerLeft, diceDotLowerRight, diceDotUpperLeft, diceDotUpperRight, diceDotMiddleLeft, diceDotMiddleRight]
-        _ -> List.map (\f -> f x y edgeLength) [diceDotLowerLeft, diceDotLowerRight, diceDotUpperLeft, diceDotUpperRight, diceDotMiddleLeft, diceDotMiddleRight]
+        1 ->
+            List.map (\f -> f x y edgeLength) [ diceDotCenter ]
+
+        2 ->
+            List.map (\f -> f x y edgeLength) [ diceDotLowerLeft, diceDotUpperRight ]
+
+        3 ->
+            List.map (\f -> f x y edgeLength) [ diceDotLowerLeft, diceDotUpperRight, diceDotCenter ]
+
+        4 ->
+            List.map (\f -> f x y edgeLength) [ diceDotLowerLeft, diceDotLowerRight, diceDotUpperLeft, diceDotUpperRight ]
+
+        5 ->
+            List.map (\f -> f x y edgeLength) [ diceDotLowerLeft, diceDotLowerRight, diceDotUpperLeft, diceDotUpperRight, diceDotCenter ]
+
+        6 ->
+            List.map (\f -> f x y edgeLength) [ diceDotLowerLeft, diceDotLowerRight, diceDotUpperLeft, diceDotUpperRight, diceDotMiddleLeft, diceDotMiddleRight ]
+
+        _ ->
+            List.map (\f -> f x y edgeLength) [ diceDotLowerLeft, diceDotLowerRight, diceDotUpperLeft, diceDotUpperRight, diceDotMiddleLeft, diceDotMiddleRight ]
 
 
 diceDotUpperLeft : Float -> Float -> Float -> Svg msg
 diceDotUpperLeft diceX diceY diceEdgeLength =
     let
-        radius = diceEdgeLength / 10
-        centerX = diceX + radius + 2
-        centerY = diceY + radius + 2
+        radius =
+            diceEdgeLength / 10
+
+        centerX =
+            diceX + radius + 2
+
+        centerY =
+            diceY + radius + 2
     in
-        diceDot radius centerX centerY
+    diceDot radius centerX centerY
 
 
 diceDotLowerRight : Float -> Float -> Float -> Svg msg
 diceDotLowerRight diceX diceY diceEdgeLength =
     let
-        radius = diceEdgeLength / 10
-        centerX = diceX + diceEdgeLength - 2 - radius
-        centerY = diceY + diceEdgeLength - 2 - radius
+        radius =
+            diceEdgeLength / 10
+
+        centerX =
+            diceX + diceEdgeLength - 2 - radius
+
+        centerY =
+            diceY + diceEdgeLength - 2 - radius
     in
     diceDot radius centerX centerY
 
@@ -153,9 +196,14 @@ diceDotLowerRight diceX diceY diceEdgeLength =
 diceDotLowerLeft : Float -> Float -> Float -> Svg msg
 diceDotLowerLeft diceX diceY diceEdgeLength =
     let
-        radius = diceEdgeLength / 10
-        centerX = diceX + radius + 2
-        centerY = diceY + diceEdgeLength - 2 - radius
+        radius =
+            diceEdgeLength / 10
+
+        centerX =
+            diceX + radius + 2
+
+        centerY =
+            diceY + diceEdgeLength - 2 - radius
     in
     diceDot radius centerX centerY
 
@@ -163,9 +211,14 @@ diceDotLowerLeft diceX diceY diceEdgeLength =
 diceDotCenter : Float -> Float -> Float -> Svg msg
 diceDotCenter diceX diceY diceEdgeLength =
     let
-        radius = diceEdgeLength / 10
-        centerX = diceX + (diceEdgeLength / 2)
-        centerY = diceY + (diceEdgeLength / 2)
+        radius =
+            diceEdgeLength / 10
+
+        centerX =
+            diceX + (diceEdgeLength / 2)
+
+        centerY =
+            diceY + (diceEdgeLength / 2)
     in
     diceDot radius centerX centerY
 
@@ -173,29 +226,46 @@ diceDotCenter diceX diceY diceEdgeLength =
 diceDotUpperRight : Float -> Float -> Float -> Svg msg
 diceDotUpperRight diceX diceY diceEdgeLength =
     let
-        radius = diceEdgeLength / 10
-        centerX = diceX + diceEdgeLength - 2 - radius
-        centerY = diceY + radius + 2
+        radius =
+            diceEdgeLength / 10
+
+        centerX =
+            diceX + diceEdgeLength - 2 - radius
+
+        centerY =
+            diceY + radius + 2
     in
     diceDot radius centerX centerY
 
-diceDotMiddleLeft: Float -> Float -> Float -> Svg msg
+
+diceDotMiddleLeft : Float -> Float -> Float -> Svg msg
 diceDotMiddleLeft diceX diceY diceEdgeLength =
     let
-            radius = diceEdgeLength / 10
-            centerX = diceX + radius + 2
-            centerY = diceY + (diceEdgeLength / 2)
+        radius =
+            diceEdgeLength / 10
+
+        centerX =
+            diceX + radius + 2
+
+        centerY =
+            diceY + (diceEdgeLength / 2)
     in
     diceDot radius centerX centerY
 
-diceDotMiddleRight: Float -> Float -> Float -> Svg msg
+
+diceDotMiddleRight : Float -> Float -> Float -> Svg msg
 diceDotMiddleRight diceX diceY diceEdgeLength =
-        let
-            radius = diceEdgeLength / 10
-            centerX = diceX + diceEdgeLength - 2 - radius
-            centerY = diceY + (diceEdgeLength / 2)
-        in
-        diceDot radius centerX centerY
+    let
+        radius =
+            diceEdgeLength / 10
+
+        centerX =
+            diceX + diceEdgeLength - 2 - radius
+
+        centerY =
+            diceY + (diceEdgeLength / 2)
+    in
+    diceDot radius centerX centerY
 
 
 diceDot : Float -> Float -> Float -> Svg msg
