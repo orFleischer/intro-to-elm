@@ -121,12 +121,13 @@ dice upperLeftX upperLeftY edgeLength diceFace =
 diceDots: Float -> Float -> Float -> Int -> List (Svg msg)
 diceDots x y edgeLength diceFace =
     case diceFace of
-        1 -> [diceDotCenter x y edgeLength]
-        2 -> [diceDotLowerLeft x y edgeLength, diceDotUpperRight x y edgeLength]
-        3 -> [diceDotLowerLeft x y edgeLength, diceDotUpperRight x y edgeLength, diceDotCenter x y edgeLength]
-        4 -> [diceDotLowerLeft x y edgeLength, diceDotLowerRight x y edgeLength, diceDotUpperLeft x y edgeLength, diceDotUpperRight x y edgeLength]
-        5 -> [diceDotLowerLeft x y edgeLength, diceDotLowerRight x y edgeLength, diceDotUpperLeft x y edgeLength, diceDotUpperRight x y edgeLength, diceDotCenter x y edgeLength]
-        _ -> [diceDotLowerLeft x y edgeLength, diceDotLowerRight x y edgeLength, diceDotUpperLeft x y edgeLength, diceDotUpperRight x y edgeLength, diceDotMiddleLeft x y edgeLength, diceDotMiddleRight x y edgeLength]
+        1 -> List.map (\f -> f x y edgeLength) [diceDotCenter]
+        2 -> List.map (\f -> f x y edgeLength) [diceDotLowerLeft, diceDotUpperRight]
+        3 -> List.map (\f -> f x y edgeLength) [diceDotLowerLeft, diceDotUpperRight, diceDotCenter]
+        4 -> List.map (\f -> f x y edgeLength) [diceDotLowerLeft, diceDotLowerRight, diceDotUpperLeft, diceDotUpperRight]
+        5 -> List.map (\f -> f x y edgeLength) [diceDotLowerLeft, diceDotLowerRight, diceDotUpperLeft, diceDotUpperRight, diceDotCenter]
+        6 -> List.map (\f -> f x y edgeLength) [diceDotLowerLeft, diceDotLowerRight, diceDotUpperLeft, diceDotUpperRight, diceDotMiddleLeft, diceDotMiddleRight]
+        _ -> List.map (\f -> f x y edgeLength) [diceDotLowerLeft, diceDotLowerRight, diceDotUpperLeft, diceDotUpperRight, diceDotMiddleLeft, diceDotMiddleRight]
 
 
 diceDotUpperLeft : Float -> Float -> Float -> Svg msg
