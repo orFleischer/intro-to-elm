@@ -2,13 +2,14 @@ module Exercises.Forms exposing (..)
 
 {-
 
-   Exercises: Go look at this example in the online editor here. Try to add the following features to the viewValidation helper function:
+   Exercises: Try to add the following features to the viewValidation helper function:
 
    Check that the password is longer than 8 characters.
    Make sure the password contains upper case, lower case, and numeric characters.
    Use the functions from the String module for these exercises!
 
 -}
+
 
 import Browser
 import Html exposing (..)
@@ -18,16 +19,12 @@ import Html.Events exposing (onInput)
 
 
 -- MAIN
-
-
 main =
     Browser.sandbox { init = init, update = update, view = view }
 
 
 
 -- MODEL
-
-
 type alias Model =
     { name : String
     , password : String
