@@ -19,6 +19,7 @@ import Html.Events exposing (..)
 import Random
 import Svg exposing (Svg, circle, rect, svg)
 import Svg.Attributes as Svg exposing (cx, cy, fill, height, r, rx, ry, stroke, strokeWidth, width, x, y)
+import Time
 
 
 
@@ -49,12 +50,15 @@ diceColors =
 type alias Model =
     { dieFace1 : Int
     , dieFace2 : Int
+    , numOfRolls : Int
+    , isRolling : Bool
+    , hasWon: Bool
     }
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( Model 1 1
+    ( Model 1 1 0 False False
     , Cmd.none
     )
 
@@ -65,6 +69,7 @@ init _ =
 
 type Msg
     = Roll
+    | ContinueRoll
     | NewFace Int Int
 
 
@@ -77,14 +82,25 @@ update msg model =
     in
     case msg of
         Roll ->
-            ( model
+            ( {model | numOfRolls = 0, isRolling = True, hasWon = False}
             , Random.generate identity dices
             )
 
         NewFace newFace1 newFace2 ->
-            ( Model newFace1 newFace2
+            ( Model newFace1 newFace2 model.numOfRolls model.isRolling model.hasWon
             , Cmd.none
             )
+
+        ContinueRoll ->
+            if model.numOfRolls <= 10 then
+                ( { model | numOfRolls = model.numOfRolls + 1 }
+                , Random.generate identity dices
+                )
+
+            else
+                ( { model | numOfRolls = 0 , isRolling = False, hasWon = model.dieFace1 == model.dieFace2}
+                , Cmd.none
+                )
 
 
 
@@ -93,7 +109,10 @@ update msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.none
+    if (model.isRolling) then
+        Time.every 250 (\_ -> ContinueRoll)
+     else
+        Sub.none
 
 
 
@@ -111,7 +130,11 @@ view model =
             [ h1 [] [ text (String.fromInt model.dieFace2) ]
             , svg [] (dice 10 10 50 model.dieFace2)
             ]
-         , button [ onClick Roll ] [ text "Roll" ]
+        , button [ onClick Roll ] [ text "Roll" ]
+        ,(if (not model.isRolling) then
+            if (model.hasWon) then text "won!" else text "lost!"
+         else
+            text " rolling")
         ]
 
 
