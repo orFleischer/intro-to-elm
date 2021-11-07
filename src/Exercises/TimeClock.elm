@@ -14,7 +14,7 @@ import Browser
 import Html exposing (..)
 import Html.Events exposing (onClick)
 import Svg exposing (Svg, circle, line, svg)
-import Svg.Attributes exposing (cx, cy, fill, r, stroke, strokeWidth, x1, x2, y1, y2)
+import Svg.Attributes exposing (cx, cy, dominantBaseline, fill, r, stroke, strokeWidth, style, textAnchor, x, x1, x2, y, y1, y2)
 import Task
 import Time
 
@@ -62,7 +62,7 @@ degClockOffset =
 clockProperties =
     { clockCenterX = 100
     , clockCenterY = 100
-    , clockRadius = 50
+    , clockRadius = 45
     }
 
 
@@ -158,7 +158,7 @@ timePortion2Str timePortion =
 
 drawClock : Int -> Int -> Int -> List (Svg msg)
 drawClock hours minutes seconds =
-    [ drawClockBody (), drawSecondsHand seconds, drawMinutesHand minutes, modBy 12 hours |> drawHoursHand, drawClockCenter () ]
+    [ drawClockBody (), drawSecondsHand seconds, drawMinutesHand minutes, modBy 12 hours |> drawHoursHand, drawClockCenter () ] ++ drawNumbers ()
 
 
 drawClockBody : () -> Svg msg
@@ -182,35 +182,45 @@ drawClockCenter _ =
         ]
         []
 
-
-drawHand : Float -> List (Attribute msg) -> Int -> Svg msg
-drawHand degInterval handLineAttr time =
+drawNumbers : () -> List (Svg msg)
+drawNumbers _ =
     let
+        effectiveRadius = clockProperties.clockRadius / 1.19
+    in
+    [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+        |> List.map (\time -> (time, toFloat time * degIntervalHour + degClockOffset |> degrees))
+        |> List.map (\(time, currentDegInRad) -> (time, getX2 effectiveRadius clockProperties.clockCenterX currentDegInRad, getY2 effectiveRadius clockProperties.clockCenterY currentDegInRad))
+        |> List.map (\(time, hourX, hourY) -> Svg.text_ [x (String.fromFloat hourX), y (String.fromFloat hourY), dominantBaseline "middle", textAnchor "middle"][text (String.fromInt time)] )
+
+drawHand : Float -> Float -> List (Attribute msg) -> Int -> Svg msg
+drawHand degInterval handRadiusDivider handLineAttr time =
+    let
+        effectiveRadius = clockProperties.clockRadius / handRadiusDivider
         currentDegInRad =
             toFloat time * degInterval + degClockOffset |> degrees
 
         clockHandX2 =
-            getX2 clockProperties.clockRadius clockProperties.clockCenterX currentDegInRad
+            getX2 effectiveRadius clockProperties.clockCenterX currentDegInRad
 
         clockHandY2 =
-            getY2 clockProperties.clockRadius clockProperties.clockCenterY currentDegInRad
+            getY2 effectiveRadius clockProperties.clockCenterY currentDegInRad
     in
     drawLine clockHandX2 clockHandY2 handLineAttr
 
 
 drawSecondsHand : Int -> Svg msg
 drawSecondsHand =
-    drawHand degIntervalSecAndMin [ stroke "red", strokeWidth "1" ]
+    drawHand degIntervalSecAndMin 1.20 [ stroke "red", strokeWidth "1" ]
 
 
 drawMinutesHand : Int -> Svg msg
 drawMinutesHand =
-    drawHand degIntervalSecAndMin [ stroke "brown", strokeWidth "3" ]
+    drawHand degIntervalSecAndMin 1.5 [ stroke "brown", strokeWidth "3" ]
 
 
 drawHoursHand : Int -> Svg msg
 drawHoursHand =
-    drawHand degIntervalHour [ stroke "black", strokeWidth "4" ]
+    drawHand degIntervalHour 1.70 [ stroke "black", strokeWidth "4" ]
 
 
 drawLine : Float -> Float -> List (Attribute msg) -> Svg msg
