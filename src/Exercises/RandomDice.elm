@@ -52,13 +52,14 @@ type alias Model =
     , dieFace2 : Int
     , numOfRolls : Int
     , isRolling : Bool
-    , hasWon: Bool
+    , hasWon : Bool
+    , score : Int
     }
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( Model 1 1 0 False False
+    ( Model 1 1 0 False False 0
     , Cmd.none
     )
 
@@ -82,12 +83,12 @@ update msg model =
     in
     case msg of
         Roll ->
-            ( {model | numOfRolls = 0, isRolling = True, hasWon = False}
+            ( { model | numOfRolls = 0, isRolling = True, hasWon = False }
             , Random.generate identity dices
             )
 
         NewFace newFace1 newFace2 ->
-            ( Model newFace1 newFace2 model.numOfRolls model.isRolling model.hasWon
+            ( Model newFace1 newFace2 model.numOfRolls model.isRolling model.hasWon model.score
             , Cmd.none
             )
 
@@ -98,7 +99,23 @@ update msg model =
                 )
 
             else
-                ( { model | numOfRolls = 0 , isRolling = False, hasWon = model.dieFace1 == model.dieFace2}
+                let
+                    hasWon =
+                        model.dieFace2 == model.dieFace1
+
+                    score =
+                        model.score
+                            + (if hasWon then
+                                1
+
+                               else
+                                0
+                              )
+
+                    _ =
+                        Debug.log "score is " score
+                in
+                ( { model | numOfRolls = 0, isRolling = False, hasWon = hasWon, score = score }
                 , Cmd.none
                 )
 
@@ -109,9 +126,10 @@ update msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    if (model.isRolling) then
-        Time.every 250 (\_ -> ContinueRoll)
-     else
+    if model.isRolling then
+        Time.every 100 (\_ -> ContinueRoll)
+
+    else
         Sub.none
 
 
@@ -121,21 +139,36 @@ subscriptions model =
 
 view : Model -> Html Msg
 view model =
-    div [ style "float" "left" ]
-        [ div []
-            [ h1 [] [ text (String.fromInt model.dieFace1) ]
-            , svg [] (dice 10 10 50 model.dieFace1)
+    div []
+        [ div [ style "float" "left" ]
+            [ div []
+                [ h1 [] [ text (String.fromInt model.dieFace1) ]
+                , svg [] (dice 10 10 50 model.dieFace1)
+                ]
+            , div []
+                [ h1 [] [ text (String.fromInt model.dieFace2) ]
+                , svg [] (dice 10 10 50 model.dieFace2)
+                ]
+            , button [ onClick Roll ] [ text "Roll" ]
+            , h1 [] [ renderWinLoss model ]
             ]
         , div []
-            [ h1 [] [ text (String.fromInt model.dieFace2) ]
-            , svg [] (dice 10 10 50 model.dieFace2)
+            [ h1 [] [ text ("Your Score is " ++ (String.fromInt model.score)) ]
             ]
-        , button [ onClick Roll ] [ text "Roll" ]
-        ,(if (not model.isRolling) then
-            if (model.hasWon) then text "won!" else text "lost!"
-         else
-            text " rolling")
         ]
+
+
+renderWinLoss : Model -> Html msg
+renderWinLoss model =
+    if not model.isRolling then
+        if model.hasWon then
+            text "won!"
+
+        else
+            text "lost!"
+
+    else
+        text " rolling"
 
 
 dice : Float -> Float -> Float -> Int -> List (Svg msg)
