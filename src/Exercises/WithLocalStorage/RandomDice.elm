@@ -1,4 +1,4 @@
-module Exercises.RandomDice exposing (..)
+port module Exercises.WithLocalStorage.RandomDice exposing (..)
 
 {-
 
@@ -57,9 +57,19 @@ type alias Model =
     }
 
 
-init : () -> ( Model, Cmd Msg )
+{-init : () -> ( Model, Cmd Msg )
 init _ =
     ( Model 1 1 0 False False 0
+    , Cmd.none
+    )-}
+
+
+init : Maybe Int -> ( Model, Cmd Msg )
+init possibleSavedScore =
+    let
+        _ = Debug.log "saved score is " possibleSavedScore
+    in
+    ( Model 1 1 0 False False (Maybe.withDefault 0 possibleSavedScore)
     , Cmd.none
     )
 
@@ -73,6 +83,8 @@ type Msg
     | ContinueRoll
     | NewFace Int Int
 
+
+port setStorage : Int -> Cmd msg
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
@@ -116,7 +128,7 @@ update msg model =
                         Debug.log "score is " score
                 in
                 ( { model | numOfRolls = 0, isRolling = False, hasWon = hasWon, score = score }
-                , Cmd.none
+                , Cmd.batch [setStorage score]--Cmd.none
                 )
 
 
